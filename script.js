@@ -1,37 +1,45 @@
+const colombiaTimezone = 'America/Bogota';
+const chileTimezone = 'America/Santiago';
+const peruTimezone = 'America/Lima';
+
+function formatDateTime(date, timezone, label) {
+  const formattedDate = date.toLocaleDateString('es-CL', {
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  });
+  const formattedTime = date.toLocaleTimeString('es-CL', {
+    hour: 'numeric',
+    minute: 'numeric',
+    second: 'numeric',
+    hour12: false,
+    timeZone: timezone,
+  });
+  return `${label}: ${formattedDate} ${formattedTime}`;
+}
+
 function mostrarHoraColombia() {
-    // Crear un objeto de fecha para Colombia con la zona horaria 'America/Bogota'
-    let fechaColombia = new Date().toLocaleString("es-CL", {timeZone: "America/Bogota"});
-    // Mostrar la hora en el elemento con id 'hora-colombia'
-    const formattedTime = 'Hora Colombia: ' + fechaColombia
-    document.getElementById('hora-colombia').innerText = formattedTime;
-  }
-  
-  // Llamar a la función cada segundo para actualizar la hora
-  setInterval(mostrarHoraColombia, 1000);
+  const fechaColombia = new Date();
+  const formattedTime = formatDateTime(fechaColombia, colombiaTimezone, 'Hora Colombia');
+  document.getElementById('hora-colombia').innerText = formattedTime;
+}
 
-  function mostrarHoraChile() {
-    // Crear un objeto de fecha para Chile con la zona horaria 'America/Santiago'
-    let fechaChile = new Date().toLocaleString("es-CL", {timeZone: "America/Santiago"});
-    // Mostrar la hora en el elemento con id 'hora-chile'
-    const formattedTime = 'Hora Chile: ' + fechaChile
-    document.getElementById('hora-chile').innerText = formattedTime;
-  }
-  
-  // Llamar a la función cada segundo para actualizar la hora
-  setInterval(mostrarHoraChile, 1000);
+setInterval(mostrarHoraColombia, 1000);
 
-  // ojo :
-  //FALTA HORA MEXICO ********************************** ahmeKKK
+function mostrarHoraChile() {
+  const fechaChile = new Date();
+  const formattedTime = formatDateTime(fechaChile, chileTimezone, 'Hora Chile');
+  document.getElementById('hora-chile').innerText = formattedTime;
+}
 
-  function mostrarHoraPeru() {
-    // Crear un objeto de fecha para Chile con la zona horaria 'America/Santiago'
-    let fechaPeru = new Date().toLocaleString("es-CL", {timeZone: "America/Lima"});
-    // Mostrar la hora en el elemento con id 'hora-chile'
-    const formattedTime = 'Hora Perú: ' + fechaPeru
-    document.getElementById('hora-peru').innerText = formattedTime;
-  }
-  
-  // Llamar a la función cada segundo para actualizar la hora
-  setInterval(mostrarHoraPeru, 1000);
-  
+setInterval(mostrarHoraChile, 1000);
+
+function mostrarHoraPeru() {
+  const fechaPeru = new Date();
+  const formattedTime = formatDateTime(fechaPeru, peruTimezone, 'Hora Perú');
+  document.getElementById('hora-peru').innerText = formattedTime;
+}
+
+setInterval(mostrarHoraPeru, 1000);
+
   
