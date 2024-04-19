@@ -1,0 +1,13 @@
+{
+    "manifest_version": 3,
+    "version": "1.0",
+    "name": "Horas Países",
+    "short_name": "MiApp",
+    "description": "Esta es una descripción de mi aplicación web",
+    "icons": {
+        "128": "reloj.png"
+    },
+    "action": {
+        "default_popup": "popup.html"
+    }
+}
