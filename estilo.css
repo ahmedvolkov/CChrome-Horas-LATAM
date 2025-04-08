@@ -85,3 +85,9 @@ html {
     background-repeat: no-repeat; /* Esto evitará que la imagen se repita */
     background-position: 97% 50%
   }
+
+      .hInd {
+        background-image: url('india.png'); /* Asegúrate de que la ruta a la imagen sea correcta */
+        background-repeat: no-repeat; /* Esto evitará que la imagen se repita */
+        background-position: 97% 50%
+      }
