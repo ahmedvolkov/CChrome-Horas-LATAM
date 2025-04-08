@@ -42,4 +42,11 @@ function mostrarHoraPeru() {
 
 setInterval(mostrarHoraPeru, 1000);
 
-  
+function mostrarHoraIndia() {
+    const indiaTimezone = 'Asia/Kolkata';
+    const fechaIndia = new Date();
+    const formattedTime = formatDateTime(fechaIndia, indiaTimezone, 'Hora India');
+    document.getElementById('hora-india').innerText = formattedTime;
+}
+
+setInterval(mostrarHoraIndia, 1000);  
