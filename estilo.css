@@ -1,93 +1,60 @@
+/* Variables CSS para facilitar cambios */
+:root {
+  --font-family: 'Montserrat', sans-serif;
+  --font-size: 11.5px;
+  --padding: 12px;
+  --border-color: #ccc;
+  --background-color-default: #efefef;
+  --background-color-hover: #d6d6d6;
+}
+
+/* Estilos globales */
 html {
-  font-family: 'Montserrat';
+  font-family: var(--font-family);
 }
 
-#hora-colombia {
-  width: 250px; /* Aumentar el ancho a 200px */
-  height: 5px; /* Aumentar la altura a 100px */
-  display: flex; /* Habilitar el diseño flexbox */
-  align-items: center; /* Alinear verticalmente el contenido */
-  justify-content: space-between; /* Distribuir el espacio entre los elementos */
-  padding: 12px; /* Agregar espacio interno */
-  border: 1px solid #ccc; /* Agregar un borde */
-  font-size: 11.5px; /* Establecer el tamaño de la fuente */
-  font-family: 'Montserrat'; /* Usar una fuente sans-serif */
-  background-color: #f3f3f3;
+/* Clase base para los contenedores */
+.hora-container {
+  width: 250px; /* Ancho del contenedor */
+  height: auto; /* Ajuste automático según el contenido */
+  display: flex; /* Diseño flexbox */
+  align-items: center; /* Alineación vertical */
+  justify-content: space-between; /* Espaciado entre elementos */
+  padding: var(--padding); /* Espaciado interno */
+  border: 1px solid var(--border-color); /* Borde del contenedor */
+  font-size: var(--font-size); /* Tamaño de fuente */
+  font-weight: bold; /* Negrita para el texto */
+  background-color: var(--background-color-default); /* Fondo inicial */
 }
 
-  #hora-colombia:hover {
-    background-color: #d6d6d6;
-  }
-  #hora-colombia {
-    /* Estilos para el texto "Hora Col" */
-    font-weight: bold; /* Establecer el peso de la fuente en negrita */
-  }
-  
-  #hora-chile {
-    width: 250px; /* Aumentar el ancho a 200px */
-    height: 5px; /* Aumentar la altura a 100px */
-    display: flex; /* Habilitar el diseño flexbox */
-    align-items: center; /* Alinear verticalmente el contenido */
-    justify-content: space-between; /* Distribuir el espacio entre los elementos */
-    padding: 12px; /* Agregar espacio interno */
-    border: 1px solid #ccc; /* Agregar un borde */
-    font-size: 11.5px; /* Establecer el tamaño de la fuente */
-    font-family: 'Montserrat';
-    background-color: #efefef;
-  }
-  
-  #hora-chile:hover {
-    background-color: #d6d6d6;
-  }
+/* Hover para todos los contenedores */
+.hora-container:hover {
+  background-color: var(--background-color-hover);
+}
 
-  #hora-chile {
-    /* Estilos para el texto "Hora Col" */
-    font-weight: bold; /* Establecer el peso de la fuente en negrita */
-  }
+/* Estilo específico para cada país con imágenes de fondo */
+.hCol {
+  background-image: url('colombia.png');
+}
 
-  #hora-peru {
-    width: 250px; /* Aumentar el ancho a 200px */
-  height: 5px; /* Aumentar la altura a 100px */
-  display: flex; /* Habilitar el diseño flexbox */
-  align-items: center; /* Alinear verticalmente el contenido */
-  justify-content: space-between; /* Distribuir el espacio entre los elementos */
-  padding: 12px; /* Agregar espacio interno */
-  border: 1px solid #ccc; /* Agregar un borde */
-  font-size: 11.5px; /* Establecer el tamaño de la fuente */
-  font-family: 'Montserrat';
-  background-color: #efefef
-  }
+.hCh {
+  background-image: url('chile.png');
+}
 
-  #hora-peru:hover {
-    background-color: #d6d6d6;
-  }
-  
-  #hora-peru {
-    /* Estilos para el texto "Hora Col" */
-    font-weight: bold; /* Establecer el peso de la fuente en negrita */
-  }
-  
- 
-  .hCol {
-    background-image: url('colombia.png'); /* Asegúrate de que la ruta a la imagen sea correcta */
-    background-repeat: no-repeat; /* Esto evitará que la imagen se repita */
-    background-position: 97% 50%
-  }
+.hPe {
+  background-image: url('peru.png');
+}
 
-  .hCh {
-    background-image: url('chile.png'); /* Asegúrate de que la ruta a la imagen sea correcta */
-    background-repeat: no-repeat; /* Esto evitará que la imagen se repita */
-    background-position: 97% 50%
-  }
+.hInd {
+  background-image: url('india.png');
+}
 
-  .hPe {
-    background-image: url('peru.png'); /* Asegúrate de que la ruta a la imagen sea correcta */
-    background-repeat: no-repeat; /* Esto evitará que la imagen se repita */
-    background-position: 97% 50%
-  }
+.hJpn {
+  background-image: url('japon.png');
+}
 
-      .hInd {
-        background-image: url('india.png'); /* Asegúrate de que la ruta a la imagen sea correcta */
-        background-repeat: no-repeat; /* Esto evitará que la imagen se repita */
-        background-position: 97% 50%
-      }
+/* Ajustes comunes para las imágenes de fondo */
+.hCol, .hCh, .hPe, .hInd, .hJpn {
+  background-repeat: no-repeat; /* Evitar repetición de la imagen */
+  background-position: 97% center; /* Posicionar imagen a la derecha centrada */
+}
