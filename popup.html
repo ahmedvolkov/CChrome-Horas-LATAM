@@ -9,10 +9,42 @@
 </head>
 <body>
     
-  <div id="hora-colombia" class="hCol"></div>
-  <div id="hora-chile" class="hCh"></div>
-  <div id="hora-peru" class="hPe"></div>
-  <dive id="hora-india" class="hInd"></div>
+<!-- Contenedor principal para controlar el alineado de las tarjetas -->
+<div class="reloj-mundial-grid">
+  
+  <!-- Tarjeta Colombia -->
+  <div id="hora-colombia" class="hora-container hCol">
+    <div class="info">
+      <span class="label">Colombia</span>
+      <span class="time">--:--:--</span>
+    </div>
+  </div>
+
+  <!-- Tarjeta Chile -->
+  <div id="hora-chile" class="hora-container hCh">
+    <div class="info">
+      <span class="label">Chile</span>
+      <span class="time">--:--:--</span>
+    </div>
+  </div>
+
+  <!-- Tarjeta Perú -->
+  <div id="hora-peru" class="hora-container hPe">
+    <div class="info">
+      <span class="label">Perú</span>
+      <span class="time">--:--:--</span>
+    </div>
+  </div>
+
+  <!-- Tarjeta India (Corregido de 'dive' a 'div') -->
+  <div id="hora-india" class="hora-container hInd">
+    <div class="info">
+      <span class="label">India</span>
+      <span class="time">--:--:--</span>
+    </div>
+  </div>
+
+</div>
 
   <script src="script.js"></script>
 </body>
