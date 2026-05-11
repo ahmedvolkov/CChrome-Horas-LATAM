@@ -1,4 +1,4 @@
-// Configuración de países con coordenadas y zonas horarias
+// Configuración de países
 const timezones = [
   { label: 'Colombia', elementId: 'hora-colombia', timezone: 'America/Bogota', lat: 4.60, lon: -74.08 },
   { label: 'Chile',    elementId: 'hora-chile',    timezone: 'America/Santiago', lat: -33.45, lon: -70.66 },
@@ -6,73 +6,72 @@ const timezones = [
   { label: 'India',    elementId: 'hora-india',    timezone: 'Asia/Kolkata', lat: 28.61, lon: 77.20 },
 ];
 
-async function obtenerTemperatura(lat, lon) {
+// Nueva función para obtener temperatura + weathercode
+async function obtenerClima(lat, lon) {
   try {
-    // URL corregida: agregar current=temperature_2m para obtener temperatura actual
-    const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m`;
+    const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,weather_code`;
     const respuesta = await fetch(url);
     const datos = await respuesta.json();
     
-    // Verificar si hay datos válidos
-    if (datos.current && typeof datos.current.temperature_2m === 'number') {
-      return Math.round(datos.current.temperature_2m);
-    } else {
-      console.warn("Datos de temperatura no disponibles:", datos);
-      return "--";
+    if (datos.current) {
+      return {
+        temperatura: Math.round(datos.current.temperature_2m),
+        weathercode: datos.current.weather_code || 0
+      };
     }
+    return { temperatura: "--", weathercode: 0 };
   } catch (error) {
-    console.error("Error obteniendo clima:", error);
-    return "--";
+    console.error("Error clima:", error);
+    return { temperatura: "--", weathercode: 0 };
   }
 }
 
+// Mapeo de iconos por weathercode (WMO)
+const getIconClass = (code) => {
+  if (code === 0) return 'icono-despejado';
+  if (code >= 1 && code <= 3) return 'icono-nublado-parcial';
+  if (code >= 45 && code <= 48) return 'icono-neblina';
+  if (code >= 61 && code <= 67) return 'icono-lluvioso';
+  if (code >= 71 && code <= 77) return 'icono-nieve';
+  if (code >= 80) return 'icono-lluvia-fuerte';
+  return 'icono-desconocido';
+};
+
 const actualizarHora = async (pais) => {
   const container = document.getElementById(pais.elementId);
-  if (!container) {
-    console.warn(`Elemento no encontrado: ${pais.elementId}`);
-    return;
-  }
+  if (!container) return;
 
   const ahora = new Date();
   const formattedTime = new Intl.DateTimeFormat('en-US', {
     timeZone: pais.timezone,
-    hour: '2-digit', 
-    minute: '2-digit', 
-    second: '2-digit', 
-    hour12: true
+    hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true
   }).format(ahora);
 
   const infoTexto = container.querySelector('.info-texto');
   const ahoraMins = ahora.getMinutes();
 
-  // Actualizar temperatura cada 5 minutos o si no existe
   if (!infoTexto || ahoraMins % 5 === 0) {
-    const tempReal = await obtenerTemperatura(pais.lat, pais.lon);
-    if (infoTexto) {
-      infoTexto.querySelector('.temp').textContent = `${tempReal}°C`;
-    } else {
-      container.innerHTML = `
-        <div class="info-texto">
-          <span class="pais">${pais.label}</span>
-          <span class="hora"><span class="time">${formattedTime}</span></span>
-          <span class="temp">${tempReal}°C</span>
-        </div>
-      `;
-    }
+    const clima = await obtenerClima(pais.lat, pais.lon);
+    const iconClass = getIconClass(clima.weathercode);
+    
+    container.innerHTML = `
+      <div class="info-texto">
+        <span class="pais">${pais.label}</span>
+        <span class="hora"><span class="time">${formattedTime}</span></span>
+        <span class="clima">
+          <span class="icono ${iconClass}"></span>
+          <span class="temp">${clima.temperatura}°C</span>
+        </span>
+      </div>
+    `;
   } else {
-    // Solo actualizar hora
     container.querySelector('.time').textContent = formattedTime;
   }
 };
 
-// Función para inicializar todos los países
 const inicializarRelojes = () => {
   timezones.forEach(actualizarHora);
-  // Actualizar cada segundo para la hora
-  setInterval(() => {
-    timezones.forEach(actualizarHora);
-  }, 1000);
+  setInterval(() => timezones.forEach(actualizarHora), 1000);
 };
 
-// Iniciar cuando el DOM esté listo
 document.addEventListener('DOMContentLoaded', inicializarRelojes);
