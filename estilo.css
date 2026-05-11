@@ -58,3 +58,12 @@ html {
   background-repeat: no-repeat; /* Evitar repetición de la imagen */
   background-position: 97% center; /* Posicionar imagen a la derecha centrada */
 }
+
+.icono { font-size: 1.5em; margin-right: 5px; display: inline-block; }
+.icono-despejado::before { content: '☀️'; }
+.icono-nublado-parcial::before { content: '⛅'; }
+.icono-lluvioso::before { content: '🌧️'; }
+.icono-nieve::before { content: '❄️'; }
+.icono-neblina::before { content: '🌫️'; }
+.icono-lluvia-fuerte::before { content: '🌩️'; }
+.icono-desconocido::before { content: '❓'; }
