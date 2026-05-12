@@ -13,6 +13,7 @@ const timezones = [
   { label: 'Chile', elementId: 'hora-chile', timezone: 'America/Santiago', lat: -33.45, lon: -70.66 },
   { label: 'Perú', elementId: 'hora-peru', timezone: 'America/Lima', lat: -12.04, lon: -77.03 },
   { label: 'India', elementId: 'hora-india', timezone: 'Asia/Kolkata', lat: 28.61, lon: 77.20 },
+  { label: 'Japón', elementId: 'hora-japon', timezone: 'Asia/Tokyo', lat: 35.68, lon: 139.65 }, // <--- Japón agregado
 ];
 
 // Estructuras de datos para optimización (Memoización)
@@ -141,4 +142,49 @@ document.addEventListener('DOMContentLoaded', () => {
   setupUI();
   pulse(); 
   setInterval(pulse, 1000);
+});
+
+/**
+ * Lógica dedicada para el Indicador de Bitcoin
+ */
+
+const actualizarBTC = async () => {
+    const btcPriceEl = document.querySelector('#market-btc .market-price');
+    
+    // Si el elemento no existe en el DOM, salimos para evitar errores
+    if (!btcPriceEl) return;
+
+    try {
+        // Usamos la API de CoinGecko que no requiere API Key y permite CORS
+        const response = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd');
+        
+        if (!response.ok) throw new Error('Network error');
+
+        const data = await response.json();
+        const precio = data.bitcoin.usd;
+
+        // Formateo profesional: USD 64,230.50
+        btcPriceEl.textContent = `USD ${precio.toLocaleString(undefined, {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2
+        })}`;
+
+    } catch (error) {
+        console.error("Error al obtener BTC:", error);
+        // Fallback en caso de error de conexión
+        if (btcPriceEl.textContent === "Cargando...") {
+            btcPriceEl.textContent = "Servicio no disponible";
+        }
+    }
+};
+
+/**
+ * Inicialización
+ */
+document.addEventListener('DOMContentLoaded', () => {
+    // Primera carga inmediata
+    actualizarBTC();
+
+    // Actualización cada 60 segundos (óptimo para no ser bloqueado por la API)
+    setInterval(actualizarBTC, 60000);
 });
