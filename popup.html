@@ -3,27 +3,32 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Reloj Mundial Pro</title>
+  <title>Dashboard Mundial Pro</title>
   <link rel="stylesheet" href="estilo.css">
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600&display=swap">
 </head>
 <body>
-    
-  <!-- Usamos <main> para el contenido central de la aplicación -->
+
+  <!-- Contenedor de Relojes -->
   <main class="reloj-mundial-grid">
-    
-    <!-- Cada tarjeta es un <article>, una unidad de contenido independiente -->
-    <article id="hora-colombia" class="hora-container hCol" aria-label="Hora en Colombia"></article>
-
-    <article id="hora-chile" class="hora-container hCh" aria-label="Hora en Chile"></article>
-
-    <article id="hora-peru" class="hora-container hPe" aria-label="Hora en Perú"></article>
-
-    <article id="hora-india" class="hora-container hInd" aria-label="Hora en India"></article>
-
-    <article id="hora-japon" class="hora-container hJap" aria-label="Hora en Japón"></article>
-
+    <article id="hora-colombia" class="hora-container hCol"></article>
+    <article id="hora-chile" class="hora-container hCh"></article>
+    <article id="hora-peru" class="hora-container hPe"></article>
+    <article id="hora-india" class="hora-container hInd"></article>
+    <article id="hora-japon" class="hora-container hJap"></article>
   </main>
+
+  <!-- Nueva Sección: Indicadores Financieros -->
+  <section class="mercados-grid">
+    <div id="market-btc" class="market-card">
+      <span class="market-label">₿ BTC/USD</span>
+      <span class="market-price">Cargando...</span>
+    </div>
+    <div id="market-oil" class="market-card">
+      <span class="market-label">🛢️ Brent Oil</span>
+      <span class="market-price">Cargando...</span>
+    </div>
+  </section>
 
   <script src="script.js"></script>
 </body>
