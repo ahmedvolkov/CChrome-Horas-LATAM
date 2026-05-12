@@ -3,48 +3,27 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Hora Exacta en Colombia-Chile-Peru</title>
+  <title>Reloj Mundial Pro</title>
   <link rel="stylesheet" href="estilo.css">
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400&display=swap">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600&display=swap">
 </head>
 <body>
     
-<!-- Contenedor principal para controlar el alineado de las tarjetas -->
-<div class="reloj-mundial-grid">
-  
-  <!-- Tarjeta Colombia -->
-  <div id="hora-colombia" class="hora-container hCol">
-    <div class="info">
-      <span class="label">Colombia</span>
-      <span class="time">--:--:--</span>
-    </div>
-  </div>
+  <!-- Usamos <main> para el contenido central de la aplicación -->
+  <main class="reloj-mundial-grid">
+    
+    <!-- Cada tarjeta es un <article>, una unidad de contenido independiente -->
+    <article id="hora-colombia" class="hora-container hCol" aria-label="Hora en Colombia"></article>
 
-  <!-- Tarjeta Chile -->
-  <div id="hora-chile" class="hora-container hCh">
-    <div class="info">
-      <span class="label">Chile</span>
-      <span class="time">--:--:--</span>
-    </div>
-  </div>
+    <article id="hora-chile" class="hora-container hCh" aria-label="Hora en Chile"></article>
 
-  <!-- Tarjeta Perú -->
-  <div id="hora-peru" class="hora-container hPe">
-    <div class="info">
-      <span class="label">Perú</span>
-      <span class="time">--:--:--</span>
-    </div>
-  </div>
+    <article id="hora-peru" class="hora-container hPe" aria-label="Hora en Perú"></article>
 
-  <!-- Tarjeta India (Corregido de 'dive' a 'div') -->
-  <div id="hora-india" class="hora-container hInd">
-    <div class="info">
-      <span class="label">India</span>
-      <span class="time">--:--:--</span>
-    </div>
-  </div>
+    <article id="hora-india" class="hora-container hInd" aria-label="Hora en India"></article>
 
-</div>
+    <article id="hora-japon" class="hora-container hJap" aria-label="Hora en Japón"></article>
+
+  </main>
 
   <script src="script.js"></script>
 </body>
