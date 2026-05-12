@@ -1,259 +1,138 @@
 /**
- * SISTEMA DE RELOJ Y CLIMA INTEGRADO
- * Arquitectura: Single Pulse / DOM Caching / CSS-Driven Icons
+ * DASHBOARD MUNDIAL PRO - OPTIMIZED 2026
+ * Arquitectura: Parallel Pulse / DOM Caching / Error Isolation
  */
 
 const CONFIG = {
-  CACHE_DURATION: 300000, // 5 minutos en milisegundos
-  API_URL: 'https://api.open-meteo.com/v1/forecast'
+    CACHE_DURATION: 300000, 
+    API_METEO: 'https://api.open-meteo.com/v1/forecast',
+    OIL_API_KEY: 'HLNARILAGSL9TNIR',
+    MARKETS_REFRESH: 300000
 };
 
 const timezones = [
-  { label: 'Colombia', elementId: 'hora-colombia', timezone: 'America/Bogota', lat: 4.60, lon: -74.08 },
-  { label: 'Chile', elementId: 'hora-chile', timezone: 'America/Santiago', lat: -33.45, lon: -70.66 },
-  { label: 'Perú', elementId: 'hora-peru', timezone: 'America/Lima', lat: -12.04, lon: -77.03 },
-  { label: 'India', elementId: 'hora-india', timezone: 'Asia/Kolkata', lat: 28.61, lon: 77.20 },
-  { label: 'Japón', elementId: 'hora-japon', timezone: 'Asia/Tokyo', lat: 35.68, lon: 139.65 }, // <--- Japón agregado
+    { label: 'Colombia', elementId: 'hora-colombia', timezone: 'America/Bogota', lat: 4.60, lon: -74.08 },
+    { label: 'Chile', elementId: 'hora-chile', timezone: 'America/Santiago', lat: -33.45, lon: -70.66 },
+    { label: 'Perú', elementId: 'hora-peru', timezone: 'America/Lima', lat: -12.04, lon: -77.03 },
+    { label: 'India', elementId: 'hora-india', timezone: 'Asia/Kolkata', lat: 28.61, lon: 77.20 },
+    { label: 'Japón', elementId: 'hora-japon', timezone: 'Asia/Tokyo', lat: 35.68, lon: 139.65 },
 ];
 
-// Estructuras de datos para optimización (Memoización)
 const nodesCache = new Map();
+const marketNodes = new Map();
 const formattersCache = new Map();
 const weatherCache = new Map();
 
 /**
- * Mapeo de códigos Open-Meteo a tus clases de CSS
+ * Utilitarios de Formateo y Fetch
  */
-const getIconClass = (code) => {
-  const mapping = {
-    0: 'icono-despejado',
-    1: 'icono-nublado-parcial', 2: 'icono-nublado-parcial', 3: 'icono-nublado-parcial',
-    45: 'icono-neblina', 48: 'icono-neblina',
-    61: 'icono-lluvioso', 63: 'icono-lluvioso', 
-    65: 'icono-lluvia-fuerte', 67: 'icono-lluvia-fuerte',
-    71: 'icono-nieve', 73: 'icono-nieve', 75: 'icono-nieve', 77: 'icono-nieve',
-    80: 'icono-lluvia-fuerte', 81: 'icono-lluvia-fuerte', 82: 'icono-lluvia-fuerte'
-  };
-  return mapping[code] || 'icono-desconocido';
+const fm = (v, p = "") => p + new Intl.NumberFormat('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(v);
+
+const fetchJSON = async (url) => {
+    try {
+        const res = await fetch(url);
+        return res.ok ? await res.json() : null;
+    } catch { return null; }
 };
 
-/**
- * Obtención de clima con lógica de caché
- */
-async function fetchWeather(p) {
-  const key = `${p.lat},${p.lon}`;
-  const now = Date.now();
-  const cached = weatherCache.get(key);
+// --- CLIMA Y RELOJ ---
 
-  if (cached && now - cached.timestamp < CONFIG.CACHE_DURATION) {
-    return cached.data;
-  }
-
-  try {
-    const url = `${CONFIG.API_URL}?latitude=${p.lat}&longitude=${p.lon}&current=temperature_2m,weather_code`;
-    const res = await fetch(url);
-    if (!res.ok) throw new Error();
-    
-    const data = await res.json();
-    const result = {
-      temp: Math.round(data.current.temperature_2m),
-      code: data.current.weather_code
+const getIconClass = (code) => {
+    const mapping = {
+        0: 'icono-despejado', 1: 'icono-nublado-parcial', 2: 'icono-nublado-parcial', 3: 'icono-nublado-parcial',
+        45: 'icono-neblina', 48: 'icono-neblina', 61: 'icono-lluvioso', 63: 'icono-lluvioso',
+        65: 'icono-lluvia-fuerte', 67: 'icono-lluvia-fuerte', 71: 'icono-nieve', 73: 'icono-nieve',
+        80: 'icono-lluvia-fuerte', 81: 'icono-lluvia-fuerte', 82: 'icono-lluvia-fuerte'
     };
-    
-    weatherCache.set(key, { data: result, timestamp: now });
-    return result;
-  } catch (e) {
+    return mapping[code] || 'icono-desconocido';
+};
+
+async function fetchWeather(p) {
+    const key = `${p.lat},${p.lon}`;
+    const now = Date.now();
+    const cached = weatherCache.get(key);
+    if (cached && now - cached.timestamp < CONFIG.CACHE_DURATION) return cached.data;
+
+    const data = await fetchJSON(`${CONFIG.API_METEO}?latitude=${p.lat}&longitude=${p.lon}&current=temperature_2m,weather_code`);
+    if (data) {
+        const result = { temp: Math.round(data.current.temperature_2m), code: data.current.weather_code };
+        weatherCache.set(key, { data: result, timestamp: now });
+        return result;
+    }
     return { temp: "--", code: -1 };
-  }
 }
 
-/**
- * Inicialización de la UI y caché de nodos
- */
 const setupUI = () => {
-  timezones.forEach(p => {
-    const container = document.getElementById(p.elementId);
-    if (!container) return;
-
-    // Inyectar estructura solo una vez
-    container.innerHTML = `
-      <div class="info-texto">
-        <span class="pais">${p.label}</span>
-        <span class="hora"><span class="time">--:--:--</span></span>
-        <span class="clima">
-          <span class="icono"></span>
-          <span class="temp">--°C</span>
-        </span>
-      </div>`;
-
-    // Guardar referencias a los nodos (Evita buscar en el DOM cada segundo)
-    nodesCache.set(p.elementId, {
-      time: container.querySelector('.time'),
-      temp: container.querySelector('.temp'),
-      icon: container.querySelector('.icono')
+    // 1. Relojes
+    timezones.forEach(p => {
+        const container = document.getElementById(p.elementId);
+        if (!container) return;
+        container.innerHTML = `<div class="info-texto"><span class="pais">${p.label}</span><span class="hora"><span class="time">--:--:--</span></span><span class="clima"><span class="icono"></span><span class="temp">--°C</span></span></div>`;
+        
+        nodesCache.set(p.elementId, {
+            time: container.querySelector('.time'),
+            temp: container.querySelector('.temp'),
+            icon: container.querySelector('.icono')
+        });
+        formattersCache.set(p.timezone, new Intl.DateTimeFormat('en-US', {
+            timeZone: p.timezone, hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true
+        }));
     });
 
-    // Guardar formateadores (Evita crear objetos pesados cada segundo)
-    formattersCache.set(p.timezone, new Intl.DateTimeFormat('en-US', {
-      timeZone: p.timezone, hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true
-    }));
-  });
+    // 2. Mercados (Cache de nodos para evitar re-escaneo del DOM)
+    ['btc', 'oil', 'bcv', 'usdt'].forEach(id => {
+        marketNodes.set(id, document.querySelector(`#market-${id} .market-price`));
+    });
 };
 
-/**
- * El Pulso (Heartbeat) del sistema
- */
 const pulse = async () => {
-  const now = new Date();
-  const seconds = now.getSeconds();
-  const minutes = now.getMinutes();
-  
-  // El clima se actualiza al inicio (cuando está vacío) o cada 5 minutos
-  const shouldUpdateWeather = (seconds === 0 && minutes % 5 === 0);
+    const now = new Date();
+    const isWeatherTick = (now.getSeconds() === 0 && now.getMinutes() % 5 === 0);
 
-  timezones.forEach(async p => {
-    const cache = nodesCache.get(p.elementId);
-    if (!cache) return;
-
-    // 1. Actualizar Hora (textContent es atómico y rápido)
-    const timeStr = formattersCache.get(p.timezone).format(now);
-    if (cache.time.textContent !== timeStr) {
-      cache.time.textContent = timeStr;
-    }
-
-    // 2. Actualizar Clima
-    if (shouldUpdateWeather || cache.temp.textContent === "--°C") {
-      const weather = await fetchWeather(p);
-      
-      // Actualizar temperatura
-      cache.temp.textContent = `${weather.temp}°C`;
-      
-      // Actualizar Icono via ClassName (Lógica CSS)
-      const newIconClass = getIconClass(weather.code);
-      if (!cache.icon.classList.contains(newIconClass)) {
-        cache.icon.className = `icono ${newIconClass}`;
-      }
-    }
-  });
-};
-
-// Punto de entrada
-document.addEventListener('DOMContentLoaded', () => {
-  setupUI();
-  pulse(); 
-  setInterval(pulse, 1000);
-});
-
-/**
- * Lógica dedicada para el Indicador de Bitcoin
- */
-
-const actualizarBTC = async () => {
-    const btcPriceEl = document.querySelector('#market-btc .market-price');
-    
-    // Si el elemento no existe en el DOM, salimos para evitar errores
-    if (!btcPriceEl) return;
-
-    try {
-        // Usamos la API de CoinGecko que no requiere API Key y permite CORS
-        const response = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd');
+    timezones.forEach(async p => {
+        const cache = nodesCache.get(p.elementId);
+        if (!cache) return;
         
-        if (!response.ok) throw new Error('Network error');
-
-        const data = await response.json();
-        const precio = data.bitcoin.usd;
-
-        // Formateo profesional: USD 64,230.50
-        btcPriceEl.textContent = `USD ${precio.toLocaleString(undefined, {
-            minimumFractionDigits: 2,
-            maximumFractionDigits: 2
-        })}`;
-
-    } catch (error) {
-        console.error("Error al obtener BTC:", error);
-        // Fallback en caso de error de conexión
-        if (btcPriceEl.textContent === "Cargando...") {
-            btcPriceEl.textContent = "Servicio no disponible";
+        cache.time.textContent = formattersCache.get(p.timezone).format(now);
+        
+        if (isWeatherTick || cache.temp.textContent === "--°C") {
+            const w = await fetchWeather(p);
+            cache.temp.textContent = `${w.temp}°C`;
+            cache.icon.className = `icono ${getIconClass(w.code)}`;
         }
-    }
+    });
 };
 
-/**
- * Inicialización
- */
-document.addEventListener('DOMContentLoaded', () => {
-    // Primera carga inmediata
-    actualizarBTC();
+// --- LÓGICA FINANCIERA (PARALELIZADA) ---
 
-    // Actualización cada 60 segundos (óptimo para no ser bloqueado por la API)
-    setInterval(actualizarBTC, 60000);
-});
+async function actualizarMercados() {
+    // Definición de tareas
+    const tasks = [
+        fetchJSON('https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd').then(data => {
+            if (data) marketNodes.get('btc').textContent = fm(data.bitcoin.usd, "USD ");
+        }),
+        fetchJSON(`https://www.alphavantage.co/query?function=WTI&interval=daily&apikey=${CONFIG.OIL_API_KEY}`).then(data => {
+            if (data?.data?.[0]) marketNodes.get('oil').textContent = `$${data.data[0].value} USD`;
+        }),
+        fetchJSON('https://ve.dolarapi.com/v1/dolares/oficial').then(data => {
+            if (data) marketNodes.get('bcv').textContent = fm(data.promedio, "Bs. ");
+        }),
+        fetchJSON('https://ve.dolarapi.com/v1/dolares/cripto').then(data => {
+            if (data) marketNodes.get('usdt').textContent = fm(data.promedio, "Bs. ");
+        })
+    ];
 
-// OIL -- from Here! CON alphavantage 25 calls daily""
-
-'use strict';
-
-async function actualizarPrecioPetroleo() {
-    const apiKey = 'HLNARILAGSL9TNIR';
-    const url = `https://www.alphavantage.co/query?function=WTI&interval=daily&apikey=${apiKey}`;
-    const precioElemento = document.querySelector('#market-oil .market-price');
-
-    // 1. Intentar cargar desde el caché (LocalStorage) para no gastar llamadas
-    const cachedData = localStorage.getItem('oil_price_data');
-    const now = new Date().getTime();
-
-    if (cachedData) {
-        const cache = JSON.parse(cachedData);
-        // Si el dato tiene menos de 1 hora, mostrarlo y NO llamar a la API
-        if (now - cache.timestamp < 3600000) {
-            precioElemento.innerText = `$${cache.price} USD`;
-            console.log("Usando precio de la caché (ahorrando API)");
-            return; 
-        }
-    }
-
-    try {
-        const response = await fetch(url);
-        const data = await response.json();
-
-        if (data && data.data && data.data[0]) {
-            const ultimoPrecio = data.data[0].value;
-            
-            // 2. Guardar en caché con el tiempo actual
-            const cacheToSave = {
-                price: ultimoPrecio,
-                timestamp: now
-            };
-            localStorage.setItem('oil_price_data', JSON.stringify(cacheToSave));
-
-            precioElemento.innerText = `$${ultimoPrecio} USD`;
-            console.log("Precio actualizado desde la API");
-
-        } else if (data.Note || data.Information) {
-            // Si hay límite excedido, intentar mostrar al menos el último precio viejo
-            if (cachedData) {
-                const cache = JSON.parse(cachedData);
-                precioElemento.innerText = `$${cache.price} USD*`; // Asterisco indica dato viejo
-            } else {
-                precioElemento.innerText = "Límite excedido";
-            }
-            console.warn("Límite de API alcanzado.");
-        }
-
-    } catch (error) {
-        console.error('Error:', error);
-        // Si hay error de red, mostrar el último precio que tengamos
-        if (cachedData) {
-            const cache = JSON.parse(cachedData);
-            precioElemento.innerText = `$${cache.price} USD`;
-        } else {
-            precioElemento.innerText = "Error conexión";
-        }
-    }
+    // Ejecutar todas al mismo tiempo
+    await Promise.allSettled(tasks);
 }
 
+// --- INICIALIZACIÓN ---
+
 document.addEventListener('DOMContentLoaded', () => {
-    actualizarPrecioPetroleo();
-    // Revisar cada 15 min si hace falta actualizar, pero el caché manda
-    setInterval(actualizarPrecioPetroleo, 900000); 
+    setupUI();
+    pulse(); 
+    actualizarMercados(); 
+
+    setInterval(pulse, 1000);
+    setInterval(actualizarMercados, CONFIG.MARKETS_REFRESH);
 });
