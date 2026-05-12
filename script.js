@@ -189,37 +189,52 @@ document.addEventListener('DOMContentLoaded', () => {
     setInterval(actualizarBTC, 60000);
 });
 
+// OIL -- from Here! CON alphavantage 25 calls daily""
+
+'use strict';
+
+/**
+ * Función para obtener y mostrar el precio del petróleo (WTI)
+ * utilizando la API de Alpha Vantage.
+ */
 async function actualizarPrecioPetroleo() {
-  const oilPriceElement = document.querySelector('#market-oil .market-price');
+    const apiKey = 'HLNARILAGSL9TNIR';
+    const url = `https://www.alphavantage.co/query?function=WTI&interval=daily&apikey=${apiKey}`;
+    
+    // Seleccionamos el elemento donde se mostrará el precio
+    const precioElemento = document.querySelector('#market-oil .market-price');
 
-  try {
-    const response = await fetch('https://api.oilpriceapi.com/v1/prices/latest', {
-      headers: {
-        'Authorization': 'Token 60135679cd6087a68e31bbdd6c10fcf3f0a2f6a3c3bd0465616c6041659c90af',
-        'Content-Type': 'application/json'
-      }
-    });
+    try {
+        const response = await fetch(url);
+        
+        if (!response.ok) {
+            throw new Error(`Error de red: ${response.status}`);
+        }
 
-    if (!response.ok) throw new Error('Error en la red');
+        const data = await response.json();
 
-    const data = await response.json();
+        // La API de Alpha Vantage para WTI devuelve la info en data[0].value
+        if (data && data.data && data.data[0]) {
+            const ultimoPrecio = data.data[0].value;
+            precioElemento.innerText = `$${ultimoPrecio} USD`;
+        } else if (data.Note) {
+            // Manejo de límite de API (Alpha Vantage permite pocas peticiones por minuto)
+            precioElemento.innerText = "Límite excedido";
+            console.warn("Nota de la API:", data.Note);
+        } else {
+            precioElemento.innerText = "No disponible";
+        }
 
-    // Accedemos al precio dentro del objeto de respuesta
-    // La estructura típica de esta API es data.data.price
-    const precio = data.data.price;
-    const moneda = data.data.currency;
-
-    // Actualizamos el HTML con el precio formateado
-    oilPriceElement.textContent = `${precio.toFixed(2)} ${moneda}`;
-
-  } catch (error) {
-    console.error('Error al obtener el precio del petróleo:', error);
-    oilPriceElement.textContent = "Error de carga";
-  }
+    } catch (error) {
+        console.error('Error al obtener el precio del petróleo:', error);
+        precioElemento.innerText = "Error de conexión";
+    }
 }
 
-// Ejecutar la función al cargar la página
-actualizarPrecioPetroleo();
+// Ejecutar cuando el HTML esté completamente cargado
+document.addEventListener('DOMContentLoaded', () => {
+    actualizarPrecioPetroleo();
 
-// Opcional: Actualizar cada 5 minutos para mantener el dashboard al día
-setInterval(actualizarPrecioPetroleo, 300000);
+    // Opcional: Actualizar cada 60 minutos para no agotar la API Key
+    setInterval(actualizarPrecioPetroleo, 3600000);
+});
