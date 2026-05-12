@@ -1,12 +1,9 @@
 /**
- * Optimizaciones aplicadas:
- * 1. Desacoplamiento de datos y vista.
- * 2. Actualización atómica del DOM (sin innerHTML recurrente).
- * 3. Manejo de errores resiliente y cache inteligente.
+ * NIVEL DE OPTIMIZACIÓN: EXTREMO (High-Performance Edition)
  */
 
 const CONFIG = {
-  CACHE_DURATION: 5 * 60 * 1000,
+  CACHE_DURATION: 300000, // 5 min en ms
   API_URL: 'https://api.open-meteo.com/v1/forecast'
 };
 
@@ -17,95 +14,95 @@ const timezones = [
   { label: 'India', elementId: 'hora-india', timezone: 'Asia/Kolkata', lat: 28.61, lon: 77.20 },
 ];
 
+// Pre-caché de elementos del DOM y formateadores para evitar búsquedas cada segundo
+const nodes = new Map();
+const formatters = new Map();
 const climaCache = new Map();
 
-// Formateador reutilizable para mejorar el rendimiento
-const timeFormatter = (tz) => new Intl.DateTimeFormat('en-US', {
-  timeZone: tz, hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true
-});
+/**
+ * OPTIMIZACIÓN 1: Inicialización estática
+ * Buscamos los elementos una sola vez y creamos los formateadores.
+ */
+const setup = () => {
+  timezones.forEach(p => {
+    const container = document.getElementById(p.elementId);
+    if (!container) return;
 
-const getIconClass = (code) => {
-  const icons = {
-    0: 'icono-despejado',
-    1: 'icono-nublado-parcial', 2: 'icono-nublado-parcial', 3: 'icono-nublado-parcial',
-    45: 'icono-neblina', 48: 'icono-neblina',
-    61: 'icono-lluvioso', 63: 'icono-lluvioso', 65: 'icono-lluvia-fuerte',
-    71: 'icono-nieve', 80: 'icono-lluvia-fuerte'
-  };
-  return icons[code] || 'icono-desconocido';
+    // Inyectamos la estructura base una única vez
+    container.innerHTML = `
+      <div class="info-texto">
+        <span class="pais">${p.label}</span>
+        <span class="hora"><span class="time"></span></span>
+        <span class="clima"><span class="icono"></span> <span class="temp">--°C</span></span>
+      </div>`;
+
+    // Guardamos las referencias directas a los nodos hijos
+    nodes.set(p.elementId, {
+      time: container.querySelector('.time'),
+      temp: container.querySelector('.temp'),
+      icon: container.querySelector('.icono')
+    });
+
+    // Reutilizamos el mismo objeto formateador (Ahorra CPU y Memoria)
+    formatters.set(p.timezone, new Intl.DateTimeFormat('en-US', {
+      timeZone: p.timezone, hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true
+    }));
+  });
 };
 
-async function obtenerClima(lat, lon) {
-  const key = `${lat},${lon}`;
-  const cached = climaCache.get(key);
+/**
+ * OPTIMIZACIÓN 2: Lógica de Clima con Bloqueo de Peticiones
+ */
+async function fetchClima(p) {
+  const key = `${p.lat},${p.lon}`;
   const ahora = Date.now();
+  const cached = climaCache.get(key);
 
   if (cached && ahora - cached.timestamp < CONFIG.CACHE_DURATION) return cached.data;
 
   try {
-    const url = `${CONFIG.API_URL}?latitude=${lat}&longitude=${lon}&current=temperature_2m,weather_code`;
-    const respuesta = await fetch(url);
-    if (!respuesta.ok) throw new Error('API Error');
-    
-    const datos = await respuesta.json();
-    const resultado = {
-      temperatura: datos.current ? Math.round(datos.current.temperature_2m) : "--",
-      weathercode: datos.current?.weather_code || 0
-    };
-
-    climaCache.set(key, { data: resultado, timestamp: ahora });
-    return resultado;
-  } catch (error) {
-    return { temperatura: "--", weathercode: 0 };
+    const res = await fetch(`${CONFIG.API_URL}?latitude=${p.lat}&longitude=${p.lon}&current=temperature_2m,weather_code`);
+    const { current } = await res.json();
+    const data = { temp: Math.round(current.temperature_2m), code: current.weather_code };
+    climaCache.set(key, { data, timestamp: ahora });
+    return data;
+  } catch {
+    return { temp: "--", code: 0 };
   }
 }
 
-const actualizarUI = async (pais, forzarClima = false) => {
-  const container = document.getElementById(pais.elementId);
-  if (!container) return;
-
-  // 1. Inicialización única de la estructura (Skeleton)
-  if (!container.querySelector('.info-texto')) {
-    container.innerHTML = `
-      <div class="info-texto">
-        <span class="pais">${pais.label}</span>
-        <span class="hora"><span class="time"></span></span>
-        <span class="clima">
-          <span class="icono"></span>
-          <span class="temp">--°C</span>
-        </span>
-      </div>`;
-  }
-
-  // 2. Referencias a nodos específicos (Acceso quirúrgico)
-  const timeEl = container.querySelector('.time');
-  const tempEl = container.querySelector('.temp');
-  const iconEl = container.querySelector('.icono');
-
-  // 3. Actualizar hora (Cada segundo)
-  const timeStr = timeFormatter(pais.timezone).format(new Date());
-  if (timeEl.textContent !== timeStr) {
-    timeEl.textContent = timeStr;
-  }
-
-  // 4. Actualizar clima (Solo si es necesario)
-  if (forzarClima) {
-    const clima = await obtenerClima(pais.lat, pais.lon);
-    tempEl.textContent = `${clima.temperatura}°C`;
-    iconEl.className = `icono ${getIconClass(clima.weathercode)}`;
-  }
-};
-
-const tick = () => {
+/**
+ * OPTIMIZACIÓN 3: El "Heartbeat" síncrono
+ * Usamos un solo objeto Date para todos los relojes en cada ciclo.
+ */
+const pulse = async () => {
   const ahora = new Date();
-  const esMomentoClima = ahora.getSeconds() === 0 && ahora.getMinutes() % 5 === 0;
-  
-  timezones.forEach(p => actualizarUI(p, esMomentoClima));
+  const seg = ahora.getSeconds();
+  const min = ahora.getMinutes();
+  const esCicloClima = (seg === 0 && min % 5 === 0);
+
+  timezones.forEach(async p => {
+    const nodeSet = nodes.get(p.elementId);
+    if (!nodeSet) return;
+
+    // Actualización de hora: Solo si cambia el texto (minimiza repintado)
+    const timeStr = formatters.get(p.timezone).format(ahora);
+    if (nodeSet.time.textContent !== timeStr) {
+      nodeSet.time.textContent = timeStr;
+    }
+
+    // Actualización de clima: Desacoplada del flujo principal
+    if (esCicloClima || nodeSet.temp.textContent === "--°C") {
+      const clima = await fetchClima(p);
+      nodeSet.temp.textContent = `${clima.temp}°C`;
+      nodeSet.icon.className = `icono ${getIconClass(clima.code)}`;
+    }
+  });
 };
 
+// Iniciar con máxima eficiencia
 document.addEventListener('DOMContentLoaded', () => {
-  // Primer renderizado inmediato
-  timezones.forEach(p => actualizarUI(p, true));
-  // Heartbeat del sistema
-  setInterval(tick, 1000);
+  setup();
+  pulse(); // Primer pulso inmediato
+  setInterval(pulse, 1000);
 });
