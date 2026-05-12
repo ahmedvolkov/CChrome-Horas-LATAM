@@ -193,48 +193,67 @@ document.addEventListener('DOMContentLoaded', () => {
 
 'use strict';
 
-/**
- * Función para obtener y mostrar el precio del petróleo (WTI)
- * utilizando la API de Alpha Vantage.
- */
 async function actualizarPrecioPetroleo() {
     const apiKey = 'HLNARILAGSL9TNIR';
     const url = `https://www.alphavantage.co/query?function=WTI&interval=daily&apikey=${apiKey}`;
-    
-    // Seleccionamos el elemento donde se mostrará el precio
     const precioElemento = document.querySelector('#market-oil .market-price');
+
+    // 1. Intentar cargar desde el caché (LocalStorage) para no gastar llamadas
+    const cachedData = localStorage.getItem('oil_price_data');
+    const now = new Date().getTime();
+
+    if (cachedData) {
+        const cache = JSON.parse(cachedData);
+        // Si el dato tiene menos de 1 hora, mostrarlo y NO llamar a la API
+        if (now - cache.timestamp < 3600000) {
+            precioElemento.innerText = `$${cache.price} USD`;
+            console.log("Usando precio de la caché (ahorrando API)");
+            return; 
+        }
+    }
 
     try {
         const response = await fetch(url);
-        
-        if (!response.ok) {
-            throw new Error(`Error de red: ${response.status}`);
-        }
-
         const data = await response.json();
 
-        // La API de Alpha Vantage para WTI devuelve la info en data[0].value
         if (data && data.data && data.data[0]) {
             const ultimoPrecio = data.data[0].value;
+            
+            // 2. Guardar en caché con el tiempo actual
+            const cacheToSave = {
+                price: ultimoPrecio,
+                timestamp: now
+            };
+            localStorage.setItem('oil_price_data', JSON.stringify(cacheToSave));
+
             precioElemento.innerText = `$${ultimoPrecio} USD`;
-        } else if (data.Note) {
-            // Manejo de límite de API (Alpha Vantage permite pocas peticiones por minuto)
-            precioElemento.innerText = "Límite excedido";
-            console.warn("Nota de la API:", data.Note);
-        } else {
-            precioElemento.innerText = "No disponible";
+            console.log("Precio actualizado desde la API");
+
+        } else if (data.Note || data.Information) {
+            // Si hay límite excedido, intentar mostrar al menos el último precio viejo
+            if (cachedData) {
+                const cache = JSON.parse(cachedData);
+                precioElemento.innerText = `$${cache.price} USD*`; // Asterisco indica dato viejo
+            } else {
+                precioElemento.innerText = "Límite excedido";
+            }
+            console.warn("Límite de API alcanzado.");
         }
 
     } catch (error) {
-        console.error('Error al obtener el precio del petróleo:', error);
-        precioElemento.innerText = "Error de conexión";
+        console.error('Error:', error);
+        // Si hay error de red, mostrar el último precio que tengamos
+        if (cachedData) {
+            const cache = JSON.parse(cachedData);
+            precioElemento.innerText = `$${cache.price} USD`;
+        } else {
+            precioElemento.innerText = "Error conexión";
+        }
     }
 }
 
-// Ejecutar cuando el HTML esté completamente cargado
 document.addEventListener('DOMContentLoaded', () => {
     actualizarPrecioPetroleo();
-
-    // Opcional: Actualizar cada 60 minutos para no agotar la API Key
-    setInterval(actualizarPrecioPetroleo, 3600000);
+    // Revisar cada 15 min si hace falta actualizar, pero el caché manda
+    setInterval(actualizarPrecioPetroleo, 900000); 
 });
